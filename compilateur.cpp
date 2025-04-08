@@ -24,12 +24,16 @@
 
 using namespace std;
 
-char current;				// Current car	
+char current;				// Current car
+char nextcar; // prochain caractere pour analyse LL(2)
+
+// Modification de ReadChar pour aussi read la nextcar
 
 void ReadChar(void){		// Read character and skip spaces until 
 				// non space character is read
-	while(cin.get(current) && (current==' '||current=='\t'||current=='\n'))
-	   	cin.get(current);
+    current = nextcar;
+    while (cin.get(nextcar) && (nextcar == ' ' || nextcar == '\t' || nextcar == '\n'))
+        cin.get(nextcar);
 }
 
 void Error(string s){
@@ -95,6 +99,71 @@ void ArithmeticExpression(void){
 
 }
 
+// <expression> ::= <ExpressionArithmétique> | <ExpressionArithmétique> <OpérateurRelationnel> <ExpressionArithmétique>
+//                 <OpérateurRelationnel> ::= '=' | '<>' | '<' | '<=' | '>=' | '>'
+
+string RelationalOperator(void){
+    string op;
+
+    if(current == '='){
+        op = "=";
+        ReadChar();
+    } else if(current == '<'){
+        if(nextcar == '='){
+            op = "<=";
+            ReadChar(); ReadChar();
+        } else if(nextcar == '>'){
+            op = "<>";
+            ReadChar(); ReadChar();
+        } else {
+            op = "<";
+            ReadChar();
+        }
+    } else if(current == '>'){
+        if(nextcar == '='){
+            op = ">=";
+            ReadChar(); ReadChar();
+        } else {
+            op = ">";
+            ReadChar();
+        }
+    } else {
+        Error("Opérateur relationnel attendu");
+    }
+
+    return op;
+}
+
+void Expression(void){
+    ArithmeticExpression();
+
+    // Test si on est face à un opérateur relationnel
+    if(current == '=' || current == '<' || current == '>'){
+        string op = RelationalOperator();
+        ArithmeticExpression();
+
+        cout << "\tpop %rbx" << endl;
+        cout << "\tpop %rax" << endl;
+        cout << "\tcmp %rbx, %rax" << endl;
+
+        if(op == "=")
+            cout << "\tsete %al" << endl;
+        else if(op == "<>")
+            cout << "\tsetne %al" << endl;
+        else if(op == "<")
+            cout << "\tsetl %al" << endl;
+        else if(op == "<=")
+            cout << "\tsetle %al" << endl;
+        else if(op == ">")
+            cout << "\tsetg %al" << endl;
+        else if(op == ">=")
+            cout << "\tsetge %al" << endl;
+
+        cout << "\tmovzbq %al, %rax" << endl;
+        cout << "\tpush %rax" << endl;
+    }
+}
+
 int main(void){	// First version : Source code on standard input and assembly code on standard output
 	// Header for gcc assembler / linker
 	cout << "\t\t\t# This code was produced by the CERI Compiler"<<endl;
@@ -105,8 +174,11 @@ int main(void){	// First version : Source code on standard input and assembly co
 
 	// Let's proceed to the analysis and code production
 	ReadChar();
-	ArithmeticExpression();
-	ReadChar();
+    ReadChar();
+
+    Expression();
+
+    ReadChar();
 	// Trailer for the gcc assembler / linker
 	cout << "\tmovq %rbp, %rsp\t\t# Restore the position of the stack's top"<<endl;
 	cout << "\tret\t\t\t# Return from main function"<<endl;

@@ -99,6 +99,8 @@ void ArithmeticExpression(void){
 
 }
 
+// TP2
+
 // <expression> ::= <ExpressionArithmétique> | <ExpressionArithmétique> <OpérateurRelationnel> <ExpressionArithmétique>
 //                 <OpérateurRelationnel> ::= '=' | '<>' | '<' | '<=' | '>=' | '>'
 
@@ -163,6 +165,46 @@ void Expression(void){
         cout << "\tpush %rax" << endl;
     }
 }
+
+
+// TP3
+
+bool declared[26] = { false }; // Toutes les lettres non déclarées par défaut
+
+void DeclarationPart() {
+    if (current == '[') {
+        cout << ".data" << endl;
+        ReadChar();  // Consomme le '['
+
+        if ( (current < 'a') || (current > 'z')){
+            Error("Lettre attendue après '['");
+        }
+
+        while (true) {
+            int idx = current - 'a';
+            if (declared[idx])
+                Error("Variable déjà déclarée");
+            declared[idx] = true;
+
+            cout << (char)current << ":\t.quad 0" << endl;
+            ReadChar();
+
+            if (current == ']') {
+                ReadChar();
+                break;
+            }
+            else if (current == ',') {
+                ReadChar();
+                if ((current < 'a') || current > 'z')
+                    Error("Lettre attendue après ','");
+            }
+            else {
+                Error("',' ou ']' attendu");
+            }
+        }
+    }
+}
+
 
 int main(void){	// First version : Source code on standard input and assembly code on standard output
 	// Header for gcc assembler / linker
